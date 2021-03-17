@@ -25,4 +25,4 @@ for stratified analysis.
 
 Omission of the skewness correction is also allowed, resulting in the often-recommended 'Miettinen-Nurminen' asymptotic score methods, 
 which can have inferior one-sided coverage, especially for unbalanced designs. The hypothesis test for binomial RD or RR when the skewness correction is 
-omitted corresponds to the Farrington-Manning test.
+omitted corresponds to a modified Farrington-Manning test including the variance bias correction.

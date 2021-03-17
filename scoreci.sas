@@ -93,6 +93,8 @@ OPTIONS validvarname=v7;
 *Developer notes:
 * Consider adding a wrapper macro for taking individual-level data as input;
 * Add MLE estimate for R1 and R0 to the output (pooled estimate for stratified);
+* Improve format of output datasets, to mimic standard ODS output tables?;
+* Standardise code capitalisation;
 
 %MACRO SCORECI(
   DS,
@@ -281,6 +283,7 @@ data 	main(drop=i)
     if (iter =3) then do; D1 = 1; incr=0; end;
     if (iter =4) then do; D1 = 1; incr=0; end;
   end;
+  if ERR = 0 then do; D1 = D; incr=0; end;
 
   output main;
 
@@ -332,8 +335,9 @@ data 	main(drop=i)
     MR0 = min(1,max(0,(2*P*COS(A)-L2/(3*L3))));
     MR1 = min(1,max(0,MR0+D));
     MV[i] = max(0,(MR1*(1-MR1)/N1[i] + MR0*(1-MR0)/N0[i])*(NT/(NT-1)));
-	MU3[i] = (MR1*(1-MR1)*(1-2*MR1)/(N1[i])**2 
-			- MR0*(1-MR0)*(1-2*MR0)/(N0[i])**2);
+	if (((R1S=0 & R0S=0) | (R1S=1 & R0S=1)) & D=0) then MU3[i] = 0; 
+	else MU3[i] = round((MR1*(1-MR1)*(1-2*MR1)/(N1[i])**2 
+			      - MR0*(1-MR0)*(1-2*MR0)/(N0[i])**2),1E-15); *Machine precision issue if e.g. MR0=0.5;
     if &weight.=2 then W_[i] = 1/MV[i]; 
 		* IVS weights (special handling required for zeros);
     else if &weight.=3 then W_[i] = (1/MV[i])*(NT-1)/NT; 
@@ -362,8 +366,8 @@ data 	main(drop=i)
   							the sum of the denominators for each stratum;
 
   *calculate score statistic;
-  score1 = (SDIFF-D)/sqrt(max(1E-10,DEN));
-*  IF (SDIFF-D = 0) THEN ZOBS = 0 - scterm; *** ?? TO AVOID division by 0 error;
+  if (SDIFF-D = 0) then score1 = 0;
+  else score1 = (SDIFF-D)/sqrt(max(1E-20,DEN)); *** Avoid division by 0 NOTE because SAS cannot handle infinity;
   if (SUM(of wmu3{*}) = 0) then scterm=0;
   else scterm = SUM(of wmu3{*})/(6*DEN**1.5);
   if (skew = "FALSE" | scterm = 0) then ZOBS = score1;

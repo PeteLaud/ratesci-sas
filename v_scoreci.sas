@@ -1,13 +1,25 @@
-*** Validation of SCORECI macro;
+**********************************************************
+*
+* Program Name   : V_SCORECI.SAS
+* Level / Study  : global reusable macro
+* Type           : macro validation
+* Description    : Validation of SCORECI macro
+*					(Work in progress)  
+* 
+* Author         : Pete Laud 
+* 
+* Date Created   : Mon Mar 15 2021
+* Program Status : IN DEVELOPMENT
+*
+**********************************************************;
 
-/*
 ***Validation against stratified data presented in Kaifeng Lu paper 
 *  (http://markstat.net/en/images/stories/lu_asa_2008.pdf);
 DATA DS1;
 INPUT      STRATUM   N0  E0   N1   E1;
 CARDS;
-              1   15   1   5    3   
-              2   10   3   10    4  
+              1   15   1   5      3   
+              2   10   3   10     4  
               3   25   2   35    18 
 ;
 %SCORECI(DS=DS1,DELTA=0.2,LEVEL=0.95,STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
@@ -61,8 +73,8 @@ ods output cmh=cmh
 			crosstabfreqs=counts;
 proc freq data=DS3t ;
   weight count;
-  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2);
-*  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
+*  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2);
+  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
 *  tables stratum*trt*outcome / cmh commonriskdiff(cl=MH test=MH column=2);
 run; 
 
@@ -92,16 +104,37 @@ title;
 DATA DS4;
 INPUT      STRATUM   E1  N1  E0  N0;
 CARDS;
-              1   56  70  48  80 
-              2   9 10 3 10 
+            1  56 70 48 80 
+            2   9 10  3 10 
 			3   6  7  2  7
-			4  5 56 0  29
-			5  0 10 0 20
-			6  0 10 0 10
-			7  10 10 0 20
-			8  0 10 10 10 
-			9 30 75 30 30
+			4   5 56  0 29
+			5   0 10  0 20
+			6  10 10 10 10
+			7  10 10  0 20
+			8   0 10 10 10
+			9  30 75 30 30
 ;
-%SCORECI(DS=DS4, LEVEL=0.95, STRATIFY=FALSE, WEIGHT=1, skew=FALSE);
-%SCORECI(DS=DS4, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
-*/
+%SCORECI(DS=DS4, LEVEL=0.95, STRATIFY=FALSE, WEIGHT=1, skew=FALSE, bcf=FALSE);
+
+*Rearrange data for input to PROC FREQ;
+data ds4t;
+  set ds4;
+  trt=1; 
+  outcome=1; count = E1;  output;
+  outcome=0; count=N1-E1; output;
+  trt=2; 
+  outcome=1; count = E0;  output;
+  outcome=0; count= N0-E0; output;
+run; 
+
+*Note CL=MN includes the bias correction factor N/(N-1) in the variance estimate,
+* but the score test (METHOD=SCORE) does not.;
+ods output cmh=cmh 
+			pdiffcls=pdiffcls pdifftest=pdifftest
+			crosstabfreqs=counts;
+proc freq data=DS4t ;
+  weight count;
+  by stratum;
+  tables trt*outcome / cmh riskdiff(cl=mn equal column=2 method=score);
+run; 
+

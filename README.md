@@ -16,6 +16,10 @@ are not stratified MN intervals, and consequently can conflict with the result o
 For unstratified analysis, the test and interval obtained from `TABLES ... / RISKDIFF(CL=MN EQUAL METHOD=SCORE);` 
 are incoherent, because the Farrington-Manning score test omits the bias correction factor `N/(N-1)` included in the MN interval.
 
+Note also that when applying one-sided tests with PROC FREQ, the confidence intervals in the PdiffNonInf and PdiffSup output tables (with METHOD=SCORE)
+bear no relationship to the MN intervals in the PdiffCIs dataset, and actually change depending on the MARGIN value provided, which makes no sense. 
+Also, only positive values of MARGIN are allowed.
+
 In addition to addressing the above issues, the SCORECI macro incorporates skewness-corrected asymptotic score ('SCAS') methods, which ensure 
 improved equal-tailed coverage (or central location), 
 in other words for a nominal 95% confidence interval, the one-sided non-coverage probability is (on average) close to 2.5% on each side. 

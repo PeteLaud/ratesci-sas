@@ -3,20 +3,16 @@
 ### Confidence intervals and tests for comparison of rates
 
 ratesci-sas contains SAS macro code to compute score confidence intervals for rate (or risk) difference ('RD') for binomial proportions, with guaranteed coherence 
-between the interval and the corresponding hypothesis test.
+between the interval and the corresponding hypothesis test. [Subsequent updates may extend the code to include rate ratio ('RR', also known as relative risk), or
+odds ratio ('OR'), and analysis of Poisson 'exposure-adjusted' incidence rates.]
 
 Stratified calculations are catered for with a range of weighting schemes, with direct equivalence to the Cochran-Mantel-Haenszel (CMH) test when 
-comparing RD with WEIGHT=1 for MH weights.
-
-[Subsequent updates may extend the code to include rate ratio ('RR', also known as relative risk), or odds ratio ('OR'), 
-and analysis of Poisson 'exposure-adjusted' incidence rates.] 
+comparing RD with WEIGHT=1 for MH weights. 
 
 Note that SAS (v9.4) PROC FREQ will produce the Miettinen-Nurminen ('MN') interval for unstratified datasets only (and has problems producing results if there 
 are no events). The "Summary Score confidence limits" produced for a stratified analysis, e.g.
  `TABLES stratum*trt*outcome / CMH RISKDIFF(CL=MN COMMON);`
-are not stratified MN intervals, and consequently can conflict 
-with the result of the CMH test. 
-
+are not stratified MN intervals, and consequently can conflict with the result of the CMH test. 
 For unstratified analysis, the test and interval obtained from `TABLES ... / RISKDIFF(CL=MN EQUAL METHOD=SCORE);` 
 are incoherent, because the Farrington-Manning score test omits the bias correction factor (N/(N-1)) included in the MN interval.
 

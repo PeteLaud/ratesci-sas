@@ -112,9 +112,8 @@ CARDS;
 			6  10 10 10 10
 			7  10 10  0 20
 			8   0 10 10 10
-			9  30 75 30 30
 ;
-%SCORECI(DS=DS4, LEVEL=0.95, STRATIFY=FALSE, WEIGHT=1, skew=FALSE, bcf=FALSE);
+%SCORECI(DS=DS4, LEVEL=0.95, delta=0.1, STRATIFY=FALSE, WEIGHT=1, skew=FALSE);
 
 *Rearrange data for input to PROC FREQ;
 data ds4t;
@@ -128,13 +127,66 @@ data ds4t;
 run; 
 
 *Note CL=MN includes the bias correction factor N/(N-1) in the variance estimate,
-* but the score test (METHOD=SCORE) does not.;
-ods output cmh=cmh 
-			pdiffcls=pdiffcls pdifftest=pdifftest
+* as does the CMH test,
+* but the FM score test (METHOD=SCORE) does not;
+ods output cmh=cmh pdifftest=pdifftest
+			pdiffcls=pdiffcls 
 			crosstabfreqs=counts;
 proc freq data=DS4t ;
   weight count;
   by stratum;
-  tables trt*outcome / cmh riskdiff(cl=mn equal column=2 method=score);
+  tables trt*outcome / cmh riskdiff(cl=mn column=2 equal method=score);
 run; 
+
+
+*Making sense of the one-sided tests;
+DATA DS5;
+INPUT      STRATUM   E1  N1  E0  N0;
+CARDS;
+  			1 28 42 28 42
+;
+data ds5t;
+  set ds5;
+  trt=1; 
+  outcome=1; count = E1;  output;
+  outcome=0; count=N1-E1; output;
+  trt=2; 
+  outcome=1; count = E0;  output;
+  outcome=0; count= N0-E0; output;
+run; 
+
+%SCORECI(DS=DS5, LEVEL=0.95, DELTA=-0.2, STRATIFY=FALSE, WEIGHT=1, skew=FALSE);
+
+*95% MN confidence interval overlaps both -0.2 and +0.2;
+ods output pdiffcls=pdiffcls cmh=cmh ;
+proc freq data=DS5t;
+  weight count;
+  by stratum;
+  tables trt*outcome / cmh riskdiff(cl=mn column=2) alpha=0.05;
+run; 
+*Farrington-Manning non-inferiority test p=0.0245 sig at 0.025 significance level;
+*due to omission of the bias correction factor;
+ods output pdiffnoninf=pdiffnoninf;
+proc freq data=DS5t;
+  weight count;
+  by stratum;
+  tables trt*outcome / cmh riskdiff(noninf margin=0.2 column=2 method=score) alpha=0.025;
+run; 
+*Superiority test (Pr>Z) = 0.9755 but should be (Pr<Z) = 0.0245;
+ods output pdiffsup=pdiffsup;
+proc freq data=DS5t ;
+  weight count;
+  by stratum;
+  tables trt*outcome / cmh riskdiff(sup margin=0.2 column=2 method=score) alpha=0.025;
+run; 
+ods output pdiffequiv=pdiffequiv pdiffequivtest=pdiffequivtest;
+proc freq data=DS5t ;
+  weight count;
+  by stratum;
+  tables trt*outcome / cmh riskdiff(equiv margin=0.2 column=2 method=score) alpha=0.025;
+run; 
+* It seems that the "Method=Score" confidence interval uses the variance estimate evaluated at the margin,
+* which causes the CI to vary depending on the choice of MARGIN;
+* CONCLUSION: Better to simply report the MN confidence interval, and conduct hypothesis tests on the same
+* underlying statistic for consistency.;
 

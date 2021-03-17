@@ -33,7 +33,7 @@
 *								- NB this is NOT the normal approximation of 
 *								  inverse variance, but the weights from Tang 2020.
 *								- for obtaining a CMH-equivalent test for OR)
-*                           4 = [Minimum risk weights - to be added]
+*                           4 = [Minimum risk weights - to be added, based on inverse variance of the score]
 *                           5 = equal
 *                           6 = user specified via WT_USER variable in dataset
 *				   MAXITER, CONVERGE = precision parameters for root-finding 
@@ -92,6 +92,7 @@ OPTIONS validvarname=v7;
 
 *Developer notes:
 * Consider adding a wrapper macro for taking individual-level data as input;
+* Add MLE estimate for R1 and R0 to the output (pooled estimate for stratified);
 
 %MACRO SCORECI(
   DS,
@@ -175,7 +176,7 @@ OPTIONS validvarname=v7;
 *with nstrat=1;
 data 	main(drop=i) 
 		validate(keep=N_1: N_0: e_1: e_0: W_: R1S R0S SDIFF level LL UL 
-				ZSTAT delta PVALL PVALR HOMOGQ HOMOGP incr count pt_est);
+				ZZERO ZSTAT delta PVALL PVALR HOMOGQ HOMOGP incr count pt_est);
   set weights;
 
   *set up arrays for various calculations to be repeated across strata;
@@ -263,7 +264,8 @@ data 	main(drop=i)
   end;
 
   link mle;  *Solve the MLE equations as per Farrington & Manning, 
-  			to obtain the denominator for the test statistic (code further down); 
+  			to obtain the test statistic (code further down); 
+  if (iter=1 & count=1) then Zzero = ZOBS; *save test statistic at D=0;
   PERR = ERR;  *Keep previous result for the next iteration;
   ERR = Z-ZOBS; *calculate new result and which side of the cutoff we are at;
 
@@ -327,8 +329,8 @@ data 	main(drop=i)
     else TEMP = Q/(P**3);
     TEMP = ((1><TEMP)<>-1);  ***TO AVOID ROUNDING ERRORS IN THE ARG OF ARCOS;
     A = (1/3)*(PI+ARCOS(TEMP));
-    MR0 = max(0,(2*P*COS(A)-L2/(3*L3)));
-    MR1 = max(0,MR0+D);
+    MR0 = min(1,max(0,(2*P*COS(A)-L2/(3*L3))));
+    MR1 = min(1,max(0,MR0+D));
     MV[i] = max(0,(MR1*(1-MR1)/N1[i] + MR0*(1-MR0)/N0[i])*(NT/(NT-1)));
 	MU3[i] = (MR1*(1-MR1)*(1-2*MR1)/(N1[i])**2 
 			- MR0*(1-MR0)*(1-2*MR0)/(N0[i])**2);
@@ -348,7 +350,7 @@ data 	main(drop=i)
     WR0[i] = W_[i]*R0;
   end; 
   SUMW = sum(of W_{*}); 
-  R1S = SUM(of WR1{*})/SUMW;  *THIS IS THE R1 STAR IN THE M&N PAPER;
+  R1S = SUM(of WR1{*})/SUMW;  *THIS IS THE R1 STAR IN THE M&N PAPER (not R1 star-tilde);
   R0S = SUM(of WR0{*})/SUMW;  *THIS IS THE R0 STAR IN THE PAPER;
   SDIFF = R1S-R0S; *OBSERVED DIFF IN WEIGHTED PROPORTIONS;
 
@@ -378,7 +380,7 @@ data 	main(drop=i)
 
 run;
 
-DATA RESULT(drop = r1s r0s sdiff pt_est ll ul zstat pvall pvalr homogq homogp 
+DATA RESULT(drop = r1s r0s sdiff pt_est ll ul zstat zzero pvall pvalr homogq homogp 
 					N_1: N_0: e_1: e_0:  delta level incr count w_:
 				  %if "&stratify."="FALSE" %then %do; 
 				    w_1 
@@ -403,7 +405,7 @@ DATA RESULT(drop = r1s r0s sdiff pt_est ll ul zstat pvall pvalr homogq homogp
   TRTDIFF = PT_EST;
   L_BOUND = LL;
   U_BOUND = UL;
-  CHI2 = ZSTAT**2;
+  CHI2 = ZZERO**2;
   PVAL_2SIDED = 1-PROBCHI(CHI2,1);
   test_delta = DELTA;
   Z_DIFF = ZSTAT;

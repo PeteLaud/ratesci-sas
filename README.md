@@ -1,5 +1,6 @@
 # ratesci-sas
-Confidence intervals and tests for comparison of rates
+
+### Confidence intervals and tests for comparison of rates
 
 ratesci-sas contains SAS macro code to compute confidence intervals for rate (or risk) difference ('RD') for binomial proportions, with guaranteed coherence 
 between the interval and the corresponding hypothesis test.

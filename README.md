@@ -9,9 +9,9 @@ odds ratio ('OR'), and analysis of Poisson 'exposure-adjusted' incidence rates.]
 Stratified calculations are catered for with a range of weighting schemes, with direct equivalence to the Cochran-Mantel-Haenszel (CMH) test when 
 comparing RD with WEIGHT=1 for MH weights. 
 
-Note that SAS (v9.4) PROC FREQ will produce the Miettinen-Nurminen ('MN') interval for unstratified datasets only (and has problems producing results if there 
-are no events). The "Summary Score confidence limits" produced for a stratified analysis, e.g.
- `TABLES stratum*trt*outcome / CMH RISKDIFF(CL=MN COMMON);`
+Note that SAS (v9.4) PROC FREQ will produce the Miettinen-Nurminen ('MN') score interval for unstratified datasets only (and has problems producing results 
+if there are no events). The "Summary Score confidence limits" produced for a stratified analysis, e.g.
+ `TABLES ... / CMH COMMONRISKDIFF(CL=SCORE TEST=SCORE);`
 are not stratified MN intervals, and consequently can conflict with the result of the CMH test. 
 For unstratified analysis, the test and interval obtained from `TABLES ... / RISKDIFF(CL=MN EQUAL METHOD=SCORE);` 
 are incoherent, because the Farrington-Manning score test omits the bias correction factor (N/(N-1)) included in the MN interval.

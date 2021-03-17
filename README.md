@@ -14,19 +14,21 @@ if there are no events). The "Summary Score confidence limits" produced for a st
  `TABLES ... / CMH COMMONRISKDIFF(CL=SCORE TEST=SCORE);`
 are not stratified MN intervals, and consequently can conflict with the result of the CMH test. 
 For unstratified analysis, the test and interval obtained from `TABLES ... / RISKDIFF(CL=MN EQUAL METHOD=SCORE);` 
-are incoherent, because the Farrington-Manning score test omits the bias correction factor `N/(N-1)` included in the MN interval.
+are incoherent, because the Farrington-Manning score test omits the variance bias correction factor `N/(N-1)` included in the MN interval. 
+This correction should be included in the test to avoid inflated type 1 error rates.
 
-Note also that when applying one-sided tests with PROC FREQ, the confidence intervals in the PdiffNonInf and PdiffSup output tables (with METHOD=SCORE)
-bear no relationship to the MN intervals in the PdiffCIs dataset, and actually change depending on the MARGIN value provided, which makes no sense. 
-Also, only positive values of MARGIN are allowed.
+[Aside: Note that when applying one-sided tests with PROC FREQ, the confidence intervals in the PdiffNonInf, PdiffSup and PdiffEquiv output tables 
+(with METHOD=SCORE) bear no relationship to the MN intervals in the PdiffCIs dataset, and actually change depending on the MARGIN value provided, which 
+makes no sense. Also, only positive values of MARGIN are allowed, which means the superiority test result has to be inverted. Then there's the fact that the 
+whole concept of "inferior" vs "superior" depends on whether the endpoint is a positive event (e.g. response rate) or a negative one (e.g. death).]
 
 In addition to addressing the above issues, the SCORECI macro incorporates skewness-corrected asymptotic score ('SCAS') methods, which ensure 
-improved equal-tailed coverage (or central location), 
-in other words for a nominal 95% confidence interval, the one-sided non-coverage probability is (on average) close to 2.5% on each side. 
+improved equal-tailed coverage (or central location), in other words for a nominal 95% confidence interval, the one-sided non-coverage probability 
+is (on average) close to 2.5% on each side. 
  
 Corresponding hypothesis tests against any specified null parameter value (e.g. for a non-inferiority test) are provided, as well as tests of homogeneity
 for stratified analysis. 
 
-Omission of the skewness correction is also allowed, resulting in the often-recommended 'Miettinen-Nurminen' asymptotic score methods, 
+Omission of the skewness correction results in the often-recommended 'Miettinen-Nurminen' asymptotic score methods, 
 which can have inferior one-sided coverage, especially for unbalanced designs. The hypothesis test for binomial RD or RR when the skewness correction is 
 omitted corresponds to a modified Farrington-Manning test including the variance bias correction.

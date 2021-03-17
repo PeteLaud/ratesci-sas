@@ -14,7 +14,7 @@ if there are no events). The "Summary Score confidence limits" produced for a st
  `TABLES ... / CMH COMMONRISKDIFF(CL=SCORE TEST=SCORE);`
 are not stratified MN intervals, and consequently can conflict with the result of the CMH test. 
 For unstratified analysis, the test and interval obtained from `TABLES ... / RISKDIFF(CL=MN EQUAL METHOD=SCORE);` 
-are incoherent, because the Farrington-Manning score test omits the bias correction factor (N/(N-1)) included in the MN interval.
+are incoherent, because the Farrington-Manning score test omits the bias correction factor `N/(N-1)` included in the MN interval.
 
 In addition to addressing the above issues, the SCORECI macro incorporates skewness-corrected asymptotic score ('SCAS') methods, which ensure 
 improved equal-tailed coverage (or central location), 

@@ -454,7 +454,3 @@ quit;
 
 %MEND SCORECI;
 
-proc datasets lib = work kill nolist;
-run;
-quit;
-

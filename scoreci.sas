@@ -231,9 +231,11 @@ data 	main(drop=i)
   D = -1;
   link mle;
   Zminus1 = ZOBS;
+  output main;
   D = 1;
   link mle;
   Zplus1 = ZOBS;
+  output main;
 
   *first pass (iter=1) finds the point estimate, then the lower CL then upper CL;
   *Finally run the point estimate again but without the skewness correction
@@ -332,7 +334,7 @@ data 	main(drop=i)
     else TEMP = Q/(P**3);
     TEMP = ((1><TEMP)<>-1);  ***TO AVOID ROUNDING ERRORS IN THE ARG OF ARCOS;
     A = (1/3)*(PI+ARCOS(TEMP));
-    MR0 = min(1,max(0,(2*P*COS(A)-L2/(3*L3))));
+    MR0 = min(1,max(0,round(2*P*COS(A)-L2/(3*L3),1E-12)));
     MR1 = min(1,max(0,MR0+D));
     MV[i] = max(0,(MR1*(1-MR1)/N1[i] + MR0*(1-MR0)/N0[i])*(NT/(NT-1)));
 	if (((R1S=0 & R0S=0) | (R1S=1 & R0S=1)) & D=0) then MU3[i] = 0; 

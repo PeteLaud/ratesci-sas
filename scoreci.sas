@@ -1,6 +1,9 @@
-**********************************************************
+********************************************************************************;
 *
 * Program Name   : SCORECI.SAS
+* Author         : Pete Laud, SSU, University of Sheffield
+* Date Created   : 15 Mar 2021
+*
 * Level / Study  : global reusable macro
 * Type           : macro
 * Description    : Computes two-sided confidence intervals (CI) for comparison 
@@ -9,10 +12,9 @@
 *					(Laud 2017) for either stratified or unstratified 
 *					(i.e. single stratum) datasets, plus associated 
 *					two-sided superiority test (equivalent to a Chi-squared 
-*					test or CMH test) and/or one-sided 
-*					test for a user-specified difference, for 
-*					testing non-inferiority (stratified version of 
-*					Farrington-Manning test)
+*					test or CMH test) and/or one-sided test for a user-specified 
+*					difference, for testing non-inferiority (stratified version of 
+*					Farrington-Manning-type test)
 *                  
 * Macro            DS = name of input dataset, 
 * variables:       LEVEL = (2-sided) confidence level required, e.g. 0.95 for 95% CI
@@ -38,9 +40,6 @@
 *                           6 = user specified via WT_USER variable in dataset
 *				   MAXITER, CONVERGE = precision parameters for root-finding 
 * 
-* Author         : Pete Laud 
-* 
-* Date Created   : Mon Mar 15 2021
 * Program Status : CREATED (developed from previous NON_INF macro, 
 *					renamed appropriately for intended primary purpose)
 *
@@ -77,7 +76,7 @@
 *			  comparisons of binomial proportions. 
 *			  Statistics in Medicine 39: 3427-57 (2020)
 *
-********************************************************** 
+********************************************************************************;
 * 
 * Amended        :
 * Date Amended   :
@@ -85,8 +84,23 @@
 *
 **********************************************************;
 
-*80 character line;
-********************************************************************************;
+/********************************************************************************;
+    Copyright (C) 2021 Pete Laud
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+********************************************************************************/;
 
 OPTIONS validvarname=v7;
 
@@ -153,9 +167,9 @@ OPTIONS validvarname=v7;
 	  	*CMH weights. NB sometimes these are called SAMPLE SIZE weights 
 	  	*(e.g. Mehrotra & Railkar);
 	  *[NB weight=2 & 3 are dealt with later];
-      else IF (&WEIGHT.=4 or &nst.=1 or "&stratify."="FALSE") THEN W_[i]=1;  
+      else IF (&WEIGHT.=5 or &nst.=1 or "&stratify."="FALSE") THEN W_[i]=1;  
 	  			*THIS INDICATES EQUAL WEIGHTING per strata;
-      else if &weight.=5 then W_[i]=WTU[i]; *USER-SPECIFIED WEIGHTS;
+      else if &weight.=6 then W_[i]=WTU[i]; *USER-SPECIFIED WEIGHTS;
     end;
 
   run;
@@ -426,8 +440,8 @@ DATA WEIGHTING(keep = W_: n_strata weight);
     ELSE IF &WEIGHT. = 1 THEN WEIGHT = 'MH';         
     ELSE IF &WEIGHT. = 2 THEN WEIGHT = 'IVS';        
     ELSE IF &WEIGHT. = 3 THEN WEIGHT = 'INV';       
-    ELSE IF &WEIGHT. = 4 THEN WEIGHT = 'EQUAL';      
-    ELSE IF &WEIGHT. = 5 THEN WEIGHT = 'WT_USER';    
+    ELSE IF &WEIGHT. = 5 THEN WEIGHT = 'EQUAL';      
+    ELSE IF &WEIGHT. = 6 THEN WEIGHT = 'WT_USER';    
 RUN;
 PROC PRINT DATA = WEIGHTING noobs;
 RUN;

@@ -1,0 +1,11 @@
+*Developer notes for SCORECI.SAS:
+* Consider adding a wrapper macro for taking individual-level data as input;
+* Add checks on input parameters;
+* Add qualitative interaction test (Gail-Simon);
+* Replace maxiter & converge with single precision parameter
+* Add MLE estimate for R1 and R0 to the output (pooled estimate for stratified);
+* Improve format of output datasets, to mimic standard ODS output tables?;
+* Standardise code capitalisation & replace tabs with spaces;
+* Add validation code confirming CMH test equivalence;
+* Add minimum risk weights;
+* Allow text input for weights, e.g. MH, INV, IVS;

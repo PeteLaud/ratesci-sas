@@ -90,12 +90,6 @@
 
 OPTIONS validvarname=v7;
 
-*Developer notes:
-* Consider adding a wrapper macro for taking individual-level data as input;
-* Add MLE estimate for R1 and R0 to the output (pooled estimate for stratified);
-* Improve format of output datasets, to mimic standard ODS output tables?;
-* Standardise code capitalisation;
-
 %MACRO SCORECI(
   DS,
   DELTA = 0,

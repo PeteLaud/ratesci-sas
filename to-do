@@ -9,3 +9,4 @@
 * Add validation code confirming CMH test equivalence;
 * Add minimum risk weights;
 * Allow text input for weights, e.g. MH, INV, IVS;
+* Address relationship to simple chi-squared test;

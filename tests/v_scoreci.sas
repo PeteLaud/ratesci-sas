@@ -13,23 +13,62 @@
 *
 **********************************************************;
 
-
-
-
-
-***Validation against stratified data presented in Kaifeng Lu paper 
-*  (http://markstat.net/en/images/stories/lu_asa_2008.pdf);
+*** Example of incoherent results from PROC FREQ;
 DATA DS1;
-INPUT      STRATUM   N0  E0   N1   E1;
+INPUT      STRATUM   E1 N1 E0 N0;
 CARDS;
-              1   15   1   5      3   
-              2   10   3   10     4  
-              3   25   2   35    18 
+              1   25 33 4  17
+              2   34 50 17 25
+              3   28 50 15 25
+			  4   52 67 22 33
 ;
-%SCORECI(DS=DS1,DELTA=0.2,LEVEL=0.95,STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
+
+*Rearrange data for input to PROC FREQ;
+data ds1t;
+  set ds1;
+  trt=1; 
+  outcome=1; count = E1;  output;
+  outcome=0; count=N1-E1; output;
+  trt=2; 
+  outcome=1; count = E0;  output;
+  outcome=0; count= N0-E0; output;
+run; 
+
+ods output cmh=cmh 
+			commonpdiff=commonpdiff 
+			commonpdifftests=difftest
+			crosstabfreqs=counts;
+proc freq data=DS1t ;
+  weight count;
+  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2);
+*  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
+*  tables stratum*trt*outcome / cmh commonriskdiff(cl=MH test=MH column=2);
+run; 
+
+title "PROC FREQ CMH test p-value";
+proc print data=cmh noobs;
+  var althypothesis value prob;
+run;
+
+*Note with Method=Mantel-Haenszel, the CI includes 0 contradicting the test p-value;
+*But with Method=Summary Score, the interval is shifted too far to the right
+* in comparison to the stratified MN interval;
+title "PROC FREQ confidence limits for common risk difference";
+proc print data=commonpdiff noobs;
+  var method value lowercl uppercl;
+run;
+
+*Note the test for RD using the MN test statistic with MH weights (PVAL_2SIDED)
+* is identical to the CMH test;
+title "Stratified Miettinen-Nurminen confidence limits";
+%SCORECI(DS=DS1, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
+title "Stratified skewness-corrected score confidence limits";
+%SCORECI(DS=DS1, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=TRUE);
+title;
+
 
 *** Cisapride meta-analysis dataset from Hartung & Knapp, 
-* used in Laud 2017 Appendix B;
+* used in Laud 2017 Appendix B (https://onlinelibrary.wiley.com/doi/10.1002/pst.1813);
 DATA DS2;
 INPUT      STRATUM   N0  E0   N1   E1;
 CARDS;
@@ -50,61 +89,21 @@ CARDS;
 *%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=1);
 *%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=2);
 
-*** Example of incoherent results from PROC FREQ;
+
+***Validation against stratified data presented in Kaifeng Lu paper 
+*  (http://markstat.net/en/images/stories/lu_asa_2008.pdf);
 DATA DS3;
-INPUT      STRATUM   E1 N1 E0 N0;
+INPUT      STRATUM   N0  E0   N1   E1;
 CARDS;
-              1   25 33 4  17
-              2   34 50 17 25
-              3   28 50 15 25
-			  4   52 67 22 33
+              1   15   1   5      3   
+              2   10   3   10     4  
+              3   25   2   35    18 
 ;
-
-*Rearrange data for input to PROC FREQ;
-data ds3t;
-  set ds3;
-  trt=1; 
-  outcome=1; count = E1;  output;
-  outcome=0; count=N1-E1; output;
-  trt=2; 
-  outcome=1; count = E0;  output;
-  outcome=0; count= N0-E0; output;
-run; 
-
-ods output cmh=cmh 
-			commonpdiff=commonpdiff 
-			commonpdifftests=difftest
-			crosstabfreqs=counts;
-proc freq data=DS3t ;
-  weight count;
-*  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2);
-  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
-*  tables stratum*trt*outcome / cmh commonriskdiff(cl=MH test=MH column=2);
-run; 
-
-title "PROC FREQ CMH test p-value";
-proc print data=cmh noobs;
-  var althypothesis value prob;
-run;
-
-*Note with Method=Mantel-Haenszel, the CI includes 0 contradicting the test p-value;
-*But with Method=Summary Score, the interval is shifted too far to the right
-* in comparison to the stratified MN interval;
-title "PROC FREQ confidence limits for common risk difference";
-proc print data=commonpdiff noobs;
-  var method value lowercl uppercl;
-run;
-
-*Note the test for RD using the MN test statistic with MH weights (PVAL_2SIDED)
-* is identical to the CMH test;
-title "Stratified Miettinen-Nurminen confidence limits";
-%SCORECI(DS=DS3, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
-title "Stratified skewness-corrected score confidence limits";
-%SCORECI(DS=DS3, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=TRUE);
-title;
+%SCORECI(DS=DS3,DELTA=0.2,LEVEL=0.95,STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
 
 
 *Some single stratum test cases, including examples from Newcombe 1998;
+* (https://onlinelibrary.wiley.com/doi/10.1002/%28SICI%291097-0258%2819980430%2917%3A8%3C873%3A%3AAID-SIM779%3E3.0.CO%3B2-I) ;
 DATA DS4;
 INPUT      STRATUM   E1  N1  E0  N0;
 CARDS;

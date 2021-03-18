@@ -7,7 +7,7 @@ between the interval and the corresponding hypothesis test. [Subsequent updates 
 odds ratio ('OR'), and analysis of Poisson 'exposure-adjusted' incidence rates.]
 
 Stratified calculations are catered for with a range of weighting schemes, with direct equivalence to the Cochran-Mantel-Haenszel (CMH) test when 
-comparing RD with WEIGHT=1 for MH weights. 
+comparing RD with `WEIGHT=1` for MH weights. 
 
 Note that SAS (since v9.3M2 / STAT 12.1) PROC FREQ will produce the Miettinen-Nurminen ('MN') score interval for unstratified datasets only (and has problems 
 producing results if there are no events). The "Summary Score confidence limits" produced for a stratified analysis, e.g.
@@ -21,7 +21,7 @@ This correction should be included in the test to avoid inflated type 1 error ra
 (with METHOD=SCORE) bear no relationship to the MN intervals in the PdiffCIs dataset, and actually change depending on the MARGIN value provided, which 
 makes no sense. Also, only positive values of MARGIN are allowed, which means the superiority test result has to be inverted. Then there's the fact that the 
 whole concept of "inferior" vs "superior" depends on whether the endpoint is a positive event (e.g. response rate) or a negative one (e.g. death). The logical 
-solution is to use the same score statistic in deriving both the test and the confidence interval, output both left- and right-sided p-values and let the 
+solution is to use the same score statistic in deriving both the test and the confidence interval, output both left- and right-sided p-values, and let the 
 user choose which one is relevant for their purposes.]
 
 In addition to addressing the above issues, the SCORECI macro incorporates skewness-corrected asymptotic score ('SCAS') methods, which ensure 

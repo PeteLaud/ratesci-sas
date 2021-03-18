@@ -13,6 +13,10 @@
 *
 **********************************************************;
 
+
+
+
+
 ***Validation against stratified data presented in Kaifeng Lu paper 
 *  (http://markstat.net/en/images/stories/lu_asa_2008.pdf);
 DATA DS1;
@@ -113,7 +117,8 @@ CARDS;
 			7  10 10  0 20
 			8   0 10 10 10
 ;
-%SCORECI(DS=DS4, LEVEL=0.95, delta=0.1, STRATIFY=FALSE, WEIGHT=1, skew=FALSE);
+%SCORECI(DS=DS4, LEVEL=0.95, delta=0, STRATIFY=FALSE, WEIGHT=1, skew=FALSE);
+%SCORECI(DS=DS4, LEVEL=0.95, delta=0, STRATIFY=FALSE, WEIGHT=1, skew=TRUE);
 
 *Rearrange data for input to PROC FREQ;
 data ds4t;

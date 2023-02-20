@@ -40,7 +40,7 @@ ods output cmh=cmh
 			crosstabfreqs=counts;
 proc freq data=DS1t ;
   weight count;
-  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2);
+  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2) plots=riskdiffplot(CL=MN column=2 common=NO);
 *  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
 *  tables stratum*trt*outcome / cmh commonriskdiff(cl=MH test=MH column=2);
 run; 
@@ -88,6 +88,27 @@ CARDS;
 ;
 *%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=1);
 *%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=2);
+*Rearrange data for input to PROC FREQ;
+data ds2t;
+  set ds2;
+  trt=1; 
+  outcome=1; count = E1;  output;
+  outcome=0; count=N1-E1; output;
+  trt=2; 
+  outcome=1; count = E0;  output;
+  outcome=0; count= N0-E0; output;
+run; 
+
+ods output cmh=cmh 
+			commonpdiff=commonpdiff 
+			commonpdifftests=difftest
+			crosstabfreqs=counts;
+proc freq data=DS2t ;
+  weight count;
+  tables stratum*trt*outcome / cmh riskdiff(cl=mn common column=2) plots=riskdiffplot(CL=MN column=2 common=NO);
+*  tables stratum*trt*outcome / cmh commonriskdiff(cl=score test=score column=2);
+*  tables stratum*trt*outcome / cmh commonriskdiff(cl=MH test=MH column=2);
+run; 
 
 
 ***Validation against stratified data presented in Kaifeng Lu paper 

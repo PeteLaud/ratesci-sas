@@ -9,6 +9,7 @@
 * Improve format of output datasets, to mimic standard ODS output tables?;
 * Add validation code confirming CMH test equivalence;
 * Address relationship to simple chi-squared test;
+* Add warning if SKEW=TRUE and p-value non-calculable due to negative discriminant;
 
 * Long-term:
 * Standardise code capitalisation & replace tabs with spaces;

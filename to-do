@@ -1,6 +1,7 @@
 *Developer notes / future plans for SCORECI.SAS:
 
 * Short-term:
+* Fix issue with weights=2 or 3 (though not recommended for RD)
 * Add sense checks on input parameters;
 * Consider adding a wrapper macro for taking individual-level data as input;
 * Add qualitative interaction test (Gail-Simon);

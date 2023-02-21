@@ -215,3 +215,17 @@ run;
 * CONCLUSION: Better to simply report the MN confidence interval, and conduct hypothesis tests on the same
 * underlying statistic for consistency.;
 
+
+
+*** Small sample with empty arm in a stratum;
+DATA DS6;
+INPUT      STRATUM   E1 N1 E0 N0;
+CARDS;
+              1   2 3 0 0
+              2   3 5 1 2
+              3   2 5 1 2
+			  4   5 6 2 3
+;
+%SCORECI(DS=DS6, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=1, skew=FALSE);
+%SCORECI(DS=DS6, DELTA=0, LEVEL=0.95, STRATIFY=TRUE, WEIGHT=2, skew=FALSE); * Point estimate and LCL need fixing here;
+

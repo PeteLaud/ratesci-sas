@@ -29,11 +29,11 @@
 *                  WEIGHT = weights to be used in stratified analysis:
 *                           1 = MH (N1i*N0i)/(N1i+N0i) (default for RD 
 *								- gives null test equivalent to CMH test)
-*.                          2 = IVS (inverse variance of score  - needed for OR in a future update)
+*.                          2 = IVS (inverse variance of score  - in development, needed for OR in a future update)
 *                           3 = INV (IVS without the bias correction, 
 *								- NB this is NOT the normal approximation of 
 *								  inverse variance, but the weights from Tang 2020.
-*								- for obtaining a CMH-equivalent test for OR)
+*								- in development, for obtaining a CMH-equivalent test for OR)
 *                           4 = [Minimum risk weights - to be added, based on inverse variance of the score]
 *                           5 = equal
 *                           6 = user specified via WT_USER variable in dataset
@@ -79,8 +79,9 @@
 * 
 * Amended        : Code updated to eliminate undesirable NOTEs and warnings (when options mergenoby=warn) in log;
 *                : Added DF to HOMTESTS output dataset;
+*                : Remove strata with N1=0 or N0=0 (for correct DF for homogeneity test);
 *                : Code style improvements; 
-* Date Amended   : 20 Feb 2023
+* Date Amended   : 21 Feb 2023
 * <Repeat As Necessary following post validation amendments>
 *
 **********************************************************;
@@ -116,11 +117,31 @@ OPTIONS validvarname=v7;
   CONVERGE = 0.0000000001
 );
 
+* Remove any strata where the denominator is zero in either group;
+data dscheck;
+  set &ds.;
+  if n1 = 0 or n0 = 0 then do;
+    PUT "NOTE: At least one stratum contributed no information and was removed";
+    delete;
+  end;
+run;
+data dscount;
+  set dscheck; 
+  row = _n_;
+  call symputx("nst", row); 
+run;
+%if "&stratify." = "TRUE"  %then %do;
+  %if &nst. = 1 %then %do;
+    PUT "NOTE: Only one stratum!";
+	%let stratify = FALSE;
+  %end;
+%end;
+
 %if "&stratify." = "FALSE" %then %do;
 *for unstratified case, set weights = equal and number of strata = 1;
   %let nst = 1;
   data weights;
-    set &ds.(rename = (N1=N_1 N0=N_0 e1=e_1 e0=e_0));
+    set dscount(rename = (N1=N_1 N0=N_0 e1=e_1 e0=e_0));
     delta = &delta.;
 	level = &level.;
     alph = 1 - level;
@@ -133,7 +154,7 @@ OPTIONS validvarname=v7;
  * for stratified case, get number of strata from number of rows in input dataset;
   data ds(rename = (N1=N_1 N0=N_0 e1=e_1 e0=e_0));
     attrib wt_user format = 8.4;
-    set &ds.; 
+    set dscount; 
     row = _n_;
     if &weight. ne 6 then wt_user = 1;
     dummy = 1;
@@ -179,7 +200,7 @@ OPTIONS validvarname=v7;
   run;
 
   proc datasets lib = work nolist;
-    delete ds wide;
+    delete ds wide dscheck dscount;
   run;
   quit;
 

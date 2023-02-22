@@ -29,12 +29,14 @@
 *                  WEIGHT = weights to be used in stratified analysis:
 *                           1 = MH (N1i*N0i)/(N1i+N0i) (default for RD 
 *								- gives null test equivalent to CMH test)
-*.                          2 = IVS (inverse variance of score  - in development, needed for OR in a future update)
+*                           2 = IVS (inverse variance of score  
+*                               - in development, needed for OR in a future update)
 *                           3 = INV (IVS without the bias correction, 
 *								- NB this is NOT the normal approximation of 
 *								  inverse variance, but the weights from Tang 2020.
 *								- in development, for obtaining a CMH-equivalent test for OR)
-*                           4 = [Minimum risk weights - to be added, based on inverse variance of the score]
+*                           4 = [Minimum risk weights 
+*                               - to be added, based on inverse variance of the score]
 *                           5 = equal
 *                           6 = user specified via WT_USER variable in dataset
 *                  MAXITER, CONVERGE = precision parameters for root-finding 
@@ -42,12 +44,15 @@
 * Program Status : CREATED (developed from previous NON_INF macro, 
 *					renamed appropriately for intended primary purpose)
 *
-* Datasets used  : Input dataset must be structured as one row per stratum, 
+* Datasets used  : Input dataset must be structured as one row per stratum<#>, 
 *					containing variables: 
 *                  	N1, N0 for the sample size in the test and comparator groups
 *                  	e1, e0 for the number of events in the test and 
 *							comparator groups respectively
 *                  (& optional WT_USER if user-specified weights are required)
+*                  <#NOTE: if stratified by more than one factor, a "stratum" is defined
+*                          as a unique combination of stratification factor levels.
+*                          i.e. Summing across rows should match with overall counts.>
 *					[Future update to include optional input of individual-level
 *						data]
 *
@@ -81,7 +86,8 @@
 *                : Added DF to HOMTESTS output dataset;
 *                : Remove strata with N1=0 or N0=0 (for correct DF for homogeneity test);
 *                : Code style improvements; 
-* Date Amended   : 21 Feb 2023
+*                : Clarified "stratum" in header;
+* Date Amended   : 22 Feb 2023
 * <Repeat As Necessary following post validation amendments>
 *
 **********************************************************;

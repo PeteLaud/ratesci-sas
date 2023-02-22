@@ -3,6 +3,8 @@
 * Program Name   : SCORECI.SAS
 * Author         : Pete Laud, SSU, University of Sheffield
 * Date Created   : 15 Mar 2021
+* Version date   : 22 Feb 2023
+* Repository     : https://github.com/PeteLaud/ratesci-sas
 *
 * Level / Study  : global reusable macro
 * Type           : macro
@@ -59,10 +61,11 @@
 * Macros used    :
 *
 * Output  :    RESULT dataset containing:
-*			       Point estimate and confidence limits for the difference
-*			       One-sided and two-sided p-values
-*              HOMTESTS dataset containing test for homogeneity of stratum differences
-*              WEIGHTING dataset containing derived or provided weights
+*                  Point estimate and confidence limits for the difference;
+*                  One-sided and two-sided p-values;
+*                  Maximum likelihood estimates of per-group event rates;
+*              HOMTESTS dataset containing test for homogeneity of stratum differences;
+*              WEIGHTING dataset containing derived or provided weights;
 * 
 * REFERENCES:                                                                                
 *        [1]. FARRINGTON, C. P. AND MANNING, G: TEST STATISTICS AND SAMPLE 
@@ -86,7 +89,7 @@
 *                : Added DF to HOMTESTS output dataset;
 *                : Remove strata with N1=0 or N0=0 (for correct DF for homogeneity test);
 *                : Code style improvements; 
-*                : Clarified "stratum" in header;
+*                : Clarified "stratum" & added repository link in header;
 * Date Amended   : 22 Feb 2023
 * <Repeat As Necessary following post validation amendments>
 *

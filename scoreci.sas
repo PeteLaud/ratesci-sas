@@ -64,7 +64,7 @@
 *                  Point estimate and confidence limits for the difference;
 *                  One-sided and two-sided p-values;
 *                  Maximum likelihood estimates of per-group event rates;
-*              HOMTESTS dataset containing test for homogeneity of stratum differences;
+*              HOMTESTS dataset containing Gart-Nam test for homogeneity of stratum differences;
 *              WEIGHTING dataset containing derived or provided weights;
 * 
 * REFERENCES:                                                                                
@@ -83,6 +83,10 @@
 *             comparisons of binomial proportions. 
 *             Statistics in Medicine 39:3427-3457, 2020.
 *
+*        [5]. Gart, J and Nam, J: Approximate interval estimation of the difference in binomial 
+*             parameters: Correction for skewness and extension to multiple tables. 
+*             Biometrics 46(3):637–643, 1990.
+*
 ********************************************************************************;
 * 
 * Amended        : Code updated to eliminate undesirable NOTEs and warnings (when options mergenoby=warn) in log;
@@ -91,6 +95,8 @@
 *                : Code style improvements; 
 *                : Clarified "stratum" & added repository link in header;
 * Date Amended   : 22 Feb 2023
+* Amended        : Added reference for Gart-Nam homogeneity test
+* Date Amended   : 21 Apr 2023
 * <Repeat As Necessary following post validation amendments>
 *
 **********************************************************;

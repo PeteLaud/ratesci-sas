@@ -28,9 +28,9 @@ In addition to addressing the above issues, the SCORECI macro incorporates skewn
 improved equal-tailed coverage (or central location), in other words for a nominal 95% confidence interval, the one-sided non-coverage probability 
 is (on average) close to 2.5% on each side. 
  
-Corresponding hypothesis tests against any specified null parameter value (e.g. for a non-inferiority test) are provided, as well as tests of homogeneity
+Corresponding hypothesis tests against any specified null parameter value `DELTA` (e.g. for a non-inferiority test) are provided, as well as tests of homogeneity
 for stratified analysis. 
 
-Omission of the skewness correction results in the often-recommended 'Miettinen-Nurminen' asymptotic score methods, 
-which can have inferior one-sided coverage, especially for unbalanced designs. The hypothesis test for binomial RD or RR when the skewness correction is 
-omitted corresponds to a modified Farrington-Manning test including the variance bias correction.
+Omission of the skewness correction results in the often-recommended 'Miettinen-Nurminen' asymptotic score confidence interval, 
+which can have inferior one-sided coverage, especially for unbalanced designs. The hypothesis test for `DELTA=0` when the skewness correction is 
+omitted corresponds to the 'N-1' Chi-squared test for a single stratum, or the CMH test for stratified datasets when `WEIGHT=1`. With non-zero `DELTA`, the test becomes a modified Farrington-Manning test including the variance bias correction.

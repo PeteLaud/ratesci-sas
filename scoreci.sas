@@ -3,40 +3,42 @@
 * Program Name   : SCORECI.SAS
 * Author         : Pete Laud, SSU, University of Sheffield
 * Date Created   : 15 Mar 2021
-* Version date   : 22 Feb 2023
-* Repository     : https://github.com/PeteLaud/ratesci-sas
+* Version date   : 14 Sep 2023
+* Repository     : Download latest version from https://github.com/PeteLaud/ratesci-sas
 *
-* Level / Study  : global reusable macro
-* Type           : macro
-* Description    : Computes two-sided confidence intervals (CI) for comparison 
-*					of two independent binomial proportions using the method of 
-*					Miettinen & Nurminen (1985) with optional skewness correction
-*					(Laud 2017) for either stratified or unstratified 
-*					(i.e. single stratum) datasets, plus associated 
-*					two-sided superiority test (equivalent to a Chi-squared 
-*					test or CMH test) and/or one-sided test for a user-specified 
-*					difference, for testing non-inferiority (stratified version of 
-*					Farrington-Manning-type test)
+* Type           : Macro
+* Description    : Computes two-sided confidence intervals (CI) for the difference
+*                  between two independent binomial proportions using the method of 
+*                  Miettinen & Nurminen (1985), with optional skewness correction
+*                  (Laud 2017) for either stratified or unstratified 
+*                  (i.e. single stratum) datasets, plus associated 
+*                  two-sided superiority test (equivalent to Egon Pearson Chi-squared 
+*                  test or CMH test) and/or one-sided test for a user-specified 
+*                  difference, for testing non-inferiority (stratified version of 
+*                  Farrington-Manning-type test).
+*                  Also gives a test for homogeneity of the difference across strata 
+*                  (Gart & Nam 1990).
 *                  
 * Macro            DS = name of input dataset, 
 * variables:       LEVEL = (2-sided) confidence level required, e.g. 0.95 for 95% CI
 *                          NB this corresponds to a NI test at the (1-LEVEL)/2 
-*							significance level
+*                          significance level
 *                  DELTA = specified non-inferiority margin (default -0.1)
 *                          NB DELTA=0 corresponds to a superiority test
 *                  STRATIFY = indicator for stratified or unstratified analysis 
-*								(TRUE/FALSE)
-*                  SKEW   = indicator for inclusion of skewness correction 
-*							(TRUE/FALSE)
+*                           (TRUE/FALSE)
+*                  SKEW   = indicator for inclusion of skewness correction for confidence interval & tests
+*                           FALSE - Miettinen & Nurminen asymptotic score method
+*                           TRUE (default) - Skewness-corrected asymptotic score method (SCAS)
 *                  WEIGHT = weights to be used in stratified analysis:
-*                           1 = MH (N1i*N0i)/(N1i+N0i) (default for RD 
-*								- gives null test equivalent to CMH test)
+*                           1 = MH (Mantel-Haenszel: (N1i * N0i)/(N1i + N0i), default for RD 
+*                               - gives null test equivalent to CMH test, if skew=FALSE)
 *                           2 = IVS (inverse variance of score  
-*                               - in development, needed for OR in a future update)
+*                               - in development, needed for Odds Ratio in a future update)
 *                           3 = INV (IVS without the bias correction, 
-*								- NB this is NOT the normal approximation of 
-*								  inverse variance, but the weights from Tang 2020.
-*								- in development, for obtaining a CMH-equivalent test for OR)
+*                               - NB this is NOT the normal approximation of 
+*                                 inverse variance, but the weights from Tang 2020.
+*                               - in development, for obtaining a CMH-equivalent test for OR)
 *                           4 = [Minimum risk weights 
 *                               - to be added, based on inverse variance of the score]
 *                           5 = equal
@@ -44,19 +46,19 @@
 *                  MAXITER, CONVERGE = precision parameters for root-finding 
 * 
 * Program Status : CREATED (developed from previous NON_INF macro, 
-*					renamed appropriately for intended primary purpose)
+*                           renamed appropriately for intended primary purpose)
 *
 * Datasets used  : Input dataset must be structured as one row per stratum<#>, 
-*					containing variables: 
+*                  containing variables: 
 *                  	N1, N0 for the sample size in the test and comparator groups
 *                  	e1, e0 for the number of events in the test and 
-*							comparator groups respectively
+*                              comparator groups respectively
 *                  (& optional WT_USER if user-specified weights are required)
 *                  <#NOTE: if stratified by more than one factor, a "stratum" is defined
 *                          as a unique combination of stratification factor levels.
 *                          i.e. Summing across rows should match with overall counts.>
-*					[Future update to include optional input of individual-level
-*						data]
+*                  [Future update to include optional input of individual-level data.]
+*						
 *
 * Macros used    :
 *
@@ -97,12 +99,14 @@
 * Date Amended   : 22 Feb 2023
 * Amended        : Added reference for Gart-Nam homogeneity test
 * Date Amended   : 21 Apr 2023
+* Amended        : Documentation updates in program header only
+* Date Amended   : 14 Sep 2023
 * <Repeat As Necessary following post validation amendments>
 *
 **********************************************************;
 
 /********************************************************************************;
-    Copyright (C) 2021 Pete Laud
+    Copyright (C) 2023 Pete Laud
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -126,7 +130,7 @@ OPTIONS validvarname=v7;
   DELTA = 0,
   LEVEL = 0.95,
   STRATIFY = TRUE,
-  skew = TRUE,
+  SKEW = TRUE,
   WEIGHT = 1,
   MAXITER = 100,
   CONVERGE = 0.0000000001

@@ -8,7 +8,7 @@ library(PropCIs)
 install.packages('ratesci')
 library(ratesci)
 
-SASCIs<-read.csv("/Users/ssu/Google\ Drive/My\ Drive/_Work/GitHub/ratesci-sas/sasval1.csv")
+SASCIs<-read.csv("/Users/ssu/Documents/Main/GitHub/ratesci-sas/tests/sasval2.csv")
 nsamp<-dim(SASCIs)[[1]]
 head(SASCIs)
 
@@ -21,15 +21,15 @@ for (i in 1:nsamp) {
 	#('try' function allows the loop to continue in the event of an error)
 }
 
-allCIs<-cbind(SASCIs,RCIs)
+allCIs <- cbind(SASCIs,RCIs)
 head(allCIs)
 attach(allCIs)
 
 #identify any instances of missing intervals from diffscoreci
 allCIs[is.na(lclR),]
 allCIs[is.na(uclR),]
-lcld<-L_BOUND-lclR
-ucld<-U_BOUND-uclR
+lcld <- L_BOUND - lclR
+ucld <- U_BOUND - uclR
 
 summary(lcld)
 summary(ucld)
@@ -47,16 +47,16 @@ detach(allCIs)
 
 
 #Now do the same with skewness corrected intervals
-SASCIs2<-read.csv("/Users/ssu/Google\ Drive/My\ Drive/_Work/GitHub/ratesci-sas/tests/sasval1skew.csv")
-nsamp<-dim(SASCIs2)[[1]]
+SASCIs2 <- read.csv("/Users/ssu/Documents/Main/GitHub/ratesci-sas/tests/sasval2skew.csv")
+nsamp <- dim(SASCIs2)[[1]]
 head(SASCIs2)
 
-RCIs2 <- ratesci::scoreci(x1=SASCIs2[,"e1"],n1=SASCIs2[,"n1"],
-                          x2=SASCIs2[,"e0"],n2=SASCIs2[,"n0"],
+RCIs2 <- ratesci::scoreci(x1=SASCIs2[,"e1"], n1=SASCIs2[,"n1"],
+                          x2=SASCIs2[,"e0"], n2=SASCIs2[,"n0"],
                           level=SASCIs2[,"CONFLEV"],
                           skew=TRUE, precis=10)$estimates[,c(1,3)]
 
-allCIs2<-cbind(SASCIs2,RCIs2)
+allCIs2 <- cbind(SASCIs2, RCIs2)
 head(allCIs2)
 
 attach(allCIs2)
@@ -64,8 +64,8 @@ attach(allCIs2)
 #identify any instances of missing intervals from diffscoreci
 allCIs2[is.na(Lower),]
 allCIs2[is.na(Upper),]
-lcld<-L_BOUND-Lower
-ucld<-U_BOUND-Upper
+lcld <- L_BOUND-Lower
+ucld <- U_BOUND-Upper
 
 summary(lcld)
 summary(ucld)
@@ -78,7 +78,6 @@ hist(ucld)
 
 max(abs(lcld[!is.na(Lower)])) #maximum discrepancy between SAS macro & scoreci version
 max(abs(ucld[!is.na(Upper)])) #maximum discrepancy between SAS macro & scoreci version
-#NB precision in the diffscoreci code is +/-(1e-07) so discrepancies of that order are to be expected
 
 detach(allCIs2)
 

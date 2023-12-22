@@ -127,6 +127,9 @@ CARDS;
 *** Re-calculated in R with greater precision as
 *** (0.245523, 0.370330);
 %SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=1);
+%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=FALSE, WEIGHT=1);
+%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=TRUE, WEIGHT=1, DISTRIB=poi);
+%SCORECI(DS=DS2, LEVEL=0.95, STRATIFY=TRUE, SKEW=FALSE, WEIGHT=1, DISTRIB=poi);
 proc print data=result;
  var l_bound u_bound;
 run;
@@ -169,6 +172,21 @@ proc freq data=DS2t ;
 run; 
 *** Here the LCL with Method='Mantel-Haenszel' is coincidentally the same as MN to 4 dps, 
 *** but the UCL is different.;
+
+DATA DS2a;
+INPUT STRATUM   N0  E0   N1   E1;
+CARDS;
+ 1   16 1  16 12
+ 2  30 22 29 19
+ 3 29  0 56 5
+ 4   16 16  16 0
+;
+* 5 190 49 1 1 ;
+*** Unstratified CIs for Laud 2017 Table BI;
+%SCORECI(DS=DS2a, LEVEL=0.95, STRATIFY=FALSE, SKEW=FALSE);
+%SCORECI(DS=DS2a, LEVEL=0.95, STRATIFY=FALSE, SKEW=TRUE);
+%SCORECI(DS=DS2a, LEVEL=0.95, STRATIFY=FALSE, SKEW=FALSE, DISTRIB=poi);
+%SCORECI(DS=DS2a, LEVEL=0.95, STRATIFY=FALSE, SKEW=TRUE, DISTRIB=poi);
 
 
 *** EXAMPLE 3a: 

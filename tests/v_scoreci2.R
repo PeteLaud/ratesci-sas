@@ -36,8 +36,8 @@ summary(ucld)
 
 allCIs[is.na(lcld),]
 
-hist(lcld)
-hist(ucld)
+# hist(lcld)
+# hist(ucld)
 
 max(abs(lcld[!is.na(lclR)])) #maximum discrepancy between SAS macro & diffscoreci version
 max(abs(ucld[!is.na(uclR)])) #maximum discrepancy between SAS macro & diffscoreci version
@@ -73,8 +73,8 @@ summary(ucld)
 allCIs2[is.na(lcld),]
 allCIs2[ucld>0.00001,]
 
-hist(lcld)
-hist(ucld)
+# hist(lcld)
+# hist(ucld)
 
 max(abs(lcld[!is.na(Lower)])) #maximum discrepancy between SAS macro & scoreci version
 max(abs(ucld[!is.na(Upper)])) #maximum discrepancy between SAS macro & scoreci version

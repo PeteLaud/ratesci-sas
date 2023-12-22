@@ -62,7 +62,7 @@ run;
 
 
 
-%macro runstrat(skew=FALSE);
+%macro runstrat(skew=FALSE, distrib=bin);
 
 %do sample = 1 %to &nsamp.;
 
@@ -72,7 +72,7 @@ run;
   call symput('alpha', alpha);
  run;
 
- %SCORECI(DS=onesample, DELTA=-0.1, LEVEL=1-&alpha., STRATIFY=TRUE, SKEW=&skew.);
+ %SCORECI(DS=onesample, DELTA=-0.1, LEVEL=1-&alpha., STRATIFY=TRUE, SKEW=&skew., DISTRIB=&distrib., OUTPUT=FALSE);
  
  data oneresult;
   sample = &sample.;
@@ -103,7 +103,7 @@ data sasval(keep=sample stratum e1 n1 e0 n0 conflev l_bound u_bound test_delta p
  set output;
 run;
 
-*Export to csv for validation against R output using program v_scoreci.R; 
+*Export to csv for validation against R output using program v_scoreci3.R; 
 proc export data=sasval 
  outfile = "&path.tests\sasval3.csv"
  dbms = csv replace;
@@ -128,9 +128,57 @@ data sasval(keep=sample stratum e1 n1 e0 n0 conflev l_bound u_bound test_delta p
 run;
 
 *Export to csv for validation against R output using program v_scoreci.R; 
-*libname mylib "X:\My Drive\_Work\GitHub\ratesci-sas";
 proc export data=sasval 
  outfile = "&path.tests\sasval3skew.csv"
+ dbms = csv replace;
+run;
+
+ proc datasets lib=work nolist;
+  delete output results sasval;
+ run;
+ quit;
+
+
+ * (Repeat with DISTRIB=poi);
+%runstrat(skew=FALSE, DISTRIB=poi);
+
+data output;
+ merge samples results;
+ by sample;
+run;
+
+*Export to csv for validation against R output using program v_scoreci3.R; 
+data sasval(keep=sample stratum e1 n1 e0 n0 conflev l_bound u_bound test_delta pval_L);
+ set output;
+run;
+
+*Export to csv for validation against R output using program v_scoreci.R; 
+proc export data=sasval 
+ outfile = "&path.tests\sasval3p.csv"
+ dbms = csv replace;
+run;
+
+ proc datasets lib=work nolist;
+  delete output results sasval;
+ run;
+ quit;
+
+ * (Repeat with SKEW=TRUE and DISTRIB=poi);
+%runstrat(skew=TRUE, DISTRIB=poi);
+
+data output;
+ merge samples results;
+ by sample;
+run;
+
+*Export to csv for validation against R output using program v_scoreci3.R; 
+data sasval(keep=sample stratum e1 n1 e0 n0 conflev l_bound u_bound test_delta pval_L);
+ set output;
+run;
+
+*Export to csv for validation against R output using program v_scoreci.R; 
+proc export data=sasval 
+ outfile = "&path.tests\sasval3pskew.csv"
  dbms = csv replace;
 run;
 

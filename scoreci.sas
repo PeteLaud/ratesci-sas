@@ -3,14 +3,15 @@
 * Program Name   : SCORECI.SAS
 * Author         : Pete Laud, SSU, University of Sheffield
 * Date Created   : 15 Mar 2021
-* Version date   : 14 Sep 2023
+* Version date   : 22 Dec 2023
 * Repository     : Download latest version from https://github.com/PeteLaud/ratesci-sas
 *
 * Type           : Macro
 * Description    : Computes two-sided confidence intervals (CI) for the difference
-*                  between two independent binomial proportions using the method of 
-*                  Miettinen & Nurminen (1985), with optional skewness correction
-*                  (Laud 2017) for either stratified or unstratified 
+*                  between two independent binomial proportions or Poisson exposure-adjusted 
+*                  rates using the method of Miettinen & Nurminen (1985), 
+*                  with optional skewness correction (Laud 2017)
+*                  for either stratified or unstratified 
 *                  (i.e. single stratum) datasets, plus associated 
 *                  two-sided superiority test (equivalent to Egon Pearson Chi-squared 
 *                  test or CMH test) and/or one-sided test for a user-specified 
@@ -20,7 +21,9 @@
 *                  (Gart & Nam 1990).
 *                  
 * Macro            DS = name of input dataset, 
-* variables:       LEVEL = (2-sided) confidence level required, e.g. 0.95 for 95% CI
+* variables:       DISTRIB = distribution assumed for the input data:
+*                            bin = binomial (default), or poi = Poisson
+*                  LEVEL = (2-sided) confidence level required, e.g. 0.95 for 95% CI
 *                          NB this corresponds to a NI test at the (1-LEVEL)/2 
 *                          significance level
 *                  DELTA = specified non-inferiority margin (default -0.1)
@@ -44,6 +47,7 @@
 *                           5 = equal
 *                           6 = user specified via WT_USER variable in dataset
 *                  MAXITER, CONVERGE = precision parameters for root-finding 
+*                  OUTPUT = indicator for printed output (TRUE/FALSE)
 * 
 * Program Status : CREATED (developed from previous NON_INF macro, 
 *                           renamed appropriately for intended primary purpose)
@@ -51,6 +55,7 @@
 * Datasets used  : Input dataset must be structured as one row per stratum<#>, 
 *                  containing variables: 
 *                  	N1, N0 for the sample size in the test and comparator groups
+*                          (when DISTRIB = poi this is the total exposure time)
 *                  	e1, e0 for the number of events in the test and 
 *                              comparator groups respectively
 *                  (& optional WT_USER if user-specified weights are required)
@@ -87,7 +92,7 @@
 *
 *        [5]. Gart, J and Nam, J: Approximate interval estimation of the difference in binomial 
 *             parameters: Correction for skewness and extension to multiple tables. 
-*             Biometrics 46(3):637–643, 1990.
+*             Biometrics 46(3):637-643, 1990.
 *
 ********************************************************************************;
 * 
@@ -101,6 +106,9 @@
 * Date Amended   : 21 Apr 2023
 * Amended        : Documentation updates in program header only
 * Date Amended   : 14 Sep 2023
+* Amended        : Added DISTRIB macro variable for Poisson RD calculations 
+*                : Added OUTPUT macro variable to allow output to be suppressed
+* Date Amended   : 22 Dec 2023
 * <Repeat As Necessary following post validation amendments>
 *
 **********************************************************;
@@ -127,10 +135,12 @@ OPTIONS validvarname=v7;
 
 %MACRO SCORECI(
   DS,
+  DISTRIB = bin,
   DELTA = 0,
   LEVEL = 0.95,
   STRATIFY = TRUE,
   SKEW = TRUE,
+  OUTPUT = TRUE,
   WEIGHT = 1,
   MAXITER = 100,
   CONVERGE = 0.0000000001
@@ -346,20 +356,27 @@ data 	main(drop = i)
     GO TO LOOPT;
   end;
 
-  IF (ITER = 1 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN pt_est = D1;
-  IF (ITER = 2 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN LL = D1;
-  IF (ITER = 3 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN UL = D1;
-  IF (ITER = 4 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN uc_est = D1;
+  *** Bisection subroutine maps [-1, +1] to [-inf, +inf] for convenience (matching code used for binomial RD);
+  *** So the resulting CI for Poisson RD also needs the same transformation;
+  if "&distrib." = "bin" then D1t = D1;
+  else if "&distrib." = "poi" then D1t = round(tan(pi * D1 / 2), 1E-10);
+  IF (ITER = 1 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN do;
+    pt_est = D1t;
+    pt_back = D1;
+  end;
+  IF (ITER = 2 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN LL = D1t;
+  IF (ITER = 3 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN UL = D1t;
+  IF (ITER = 4 & (ERR = 0 | incr < &converge. | count = &maxiter.)) THEN uc_est = D1t;
 
   IF ITER < 4 THEN GOTO LOOP1;
 
  ********************************HOMOGENEITY TEST SUBROUTINE ****************;
   if &nst. > 1 and "&stratify." = "TRUE" then do;
     array Qstat(&nst.);
-    D = uc_est; *Skewness correction omitted for homogeneity test;
+    D = pt_back; 
     link mle;
     do i = 1 to &nst.;
-      Qstat[i] = ((diff[i] - D)**2)/ MV[i]; *As per Laud 2017 Appendix S4.2. ;
+      Qstat[i] = ((diff[i] - pt_est)**2)/ MV[i]; *As per Laud 2017 Appendix S4.2. (S3), evaluated at MLE;
     end;
     HOMOGQ = SUM(of Qstat{*}); 
     HOMOGP = 1 - probchi(HOMOGQ, &nst.-1);
@@ -374,32 +391,46 @@ data 	main(drop = i)
   do i = 1 to &nst.;
     NT = N1[i] + N0[i];
     CT = C1[i] + C0[i];
-    L3 = NT;
-    L2 = (N1[i] + 2*N0[i])*D - NT - CT;
-    L1 = (N0[i]*D - NT - 2*C0[i])*D + CT;
-    L0 = C0[i]*D*(1 - D);
-    Q = (L2**3)/((3*L3)**3) - (L1*L2)/(6*(L3**2)) + L0/(2*L3);
-    P = (Q >= 0)*(SQRT((L2**2)/((3*L3)**2) - L1/(3*L3)))
-        - (Q < 0)*(SQRT((L2**2)/((3*L3)**2) - L1/(3*L3)));
-    if Q = 0 then TEMP = 0;
-    else TEMP = Q/(P**3);
-    TEMP = ((1><TEMP)<>-1);  ***TO AVOID ROUNDING ERRORS IN THE ARG OF ARCOS;
-    A = (1/3)*(PI + ARCOS(TEMP));
-    MR0 = min(1, max(0, round(2*P*COS(A) - L2/(3*L3), 1E-12)));
-    MR1 = min(1, max(0, MR0 + D));
-    MV[i] = max(0, (MR1*(1 - MR1)/N1[i] + MR0*(1 - MR0)/N0[i])*(NT/(NT - 1)));
-	if (((R1S = 0 & R0S = 0) | (R1S = 1 & R0S = 1)) & D = 0) then MU3[i] = 0; 
-	else MU3[i] = round((MR1*(1 - MR1)*(1 - 2*MR1)/(N1[i])**2 
-			      - MR0*(1 - MR0)*(1 - 2*MR0)/(N0[i])**2), 1E-15); *Machine precision issue if e.g. MR0=0.5;
+    if "&distrib." = "bin" then do;
+      L3 = NT;
+      L2 = (N1[i] + 2*N0[i])*D - NT - CT;
+      L1 = (N0[i]*D - NT - 2*C0[i])*D + CT;
+      L0 = C0[i]*D*(1 - D);
+      Q = (L2**3)/((3*L3)**3) - (L1*L2)/(6*(L3**2)) + L0/(2*L3);
+      P = (Q >= 0)*(SQRT((L2**2)/((3*L3)**2) - L1/(3*L3)))
+          - (Q < 0)*(SQRT((L2**2)/((3*L3)**2) - L1/(3*L3)));
+      if Q = 0 then TEMP = 0;
+      else TEMP = Q/(P**3);
+      TEMP = ((1><TEMP)<>-1);  ***TO AVOID ROUNDING ERRORS IN THE ARG OF ARCOS;
+      A = (1/3)*(PI + ARCOS(TEMP));
+      MR0 = min(1-1E-20, max(1E-20, round(2*P*COS(A) - L2/(3*L3), 1E-12)));
+      MR1 = min(1-1E-20, max(1E-20, MR0 + D));
+      MV[i] = max(0, (MR1*(1 - MR1)/N1[i] + MR0*(1 - MR0)/N0[i])*(NT/(NT - 1))); 
+      if (((R1S = 0 & R0S = 0) | (R1S = 1 & R0S = 1)) & D = 0) then MU3[i] = 0; 
+      else MU3[i] = round((MR1*(1 - MR1)*(1 - 2*MR1)/(N1[i])**2 
+                    - MR0*(1 - MR0)*(1 - 2*MR0)/(N0[i])**2), 1E-15); *Machine precision issue if e.g. MR0=0.5;
+    end;
+    else if "&distrib." = "poi" then do;
+    * Transform D value between -1 and +1 to (-inf, +inf) for Poisson RD;
+      if D = -1 then Dp = -1E12;
+      else if D = 1 then Dp = 1E12;
+      else Dp = round(tan(pi * D / 2), 1E-10);
+      A = NT;
+      B = NT*Dp - CT;
+      C = -C0[i]*Dp;
+      MR0 = max(1E-20, (-B + sqrt(B**2 - 4*A*C))/(2*A));
+      MR1 = max(1E-20, MR0 + Dp);
+      MV[i] = max(0, (MR1/N1[i] + MR0/N0[i]));
+      MU3[i] = round(MR1/N1[i]**2 - MR0/N0[i]**2, 1E-15);
+    end;
+
     if &weight. = 2 then W_[i] = 1/MV[i]; 
 		* IVS weights (special handling required for zeros);
     else if &weight. = 3 then W_[i] = (1/MV[i])*(NT - 1)/NT; 
 		* Alternative INV weights, Tang 2020, 
 			to achieve equivalence to CMH test for OR;
-  end;
 
   *calculate stratified point estimate;
-  do i = 1 to &nst.;
     R1 = C1[i]/N1[i]; 
     R0 = C0[i]/N0[i];     *OBSERVED PROPORTIONS WITHIN EACH STRATUM;
     DIFF[i] = R1 - R0;      
@@ -418,9 +449,12 @@ data 	main(drop = i)
   DEN = SUM(of DENS{*});    *DENOMINATOR FOR THE OBS CHI-SQUARE is
   							the sum of the denominators for each stratum;
 
-  *calculate score statistic;
-  if (SDIFF - D = 0) then score1 = 0;
-  else score1 = (SDIFF - D)/sqrt(max(1E-20, DEN)); *** Avoid division by 0 NOTE because SAS cannot handle infinity;
+  *** calculate score statistic;
+  if "&distrib." = "bin" then Dt = D;
+  *** Bisection subroutine maps [-1, +1] to [-inf, +inf] for convenience (matching code used for binomial RD);
+  else if "&distrib." = "poi" then Dt = Dp; 
+  if (SDIFF - Dt = 0) then score1 = 0;
+  else score1 = (SDIFF - Dt)/sqrt(max(1E-20, DEN)); *** Avoid division by 0 NOTE because SAS cannot handle infinity;
   if (SUM(of wmu3{*}) = 0) then scterm = 0;
   else scterm = SUM(of wmu3{*})/(6*DEN**1.5);
   if (skew = "FALSE" | scterm = 0) then ZOBS = score1;
@@ -446,6 +480,7 @@ DATA RESULT(drop = r1s r0s sdiff pt_est ll ul zstat zzero pvall pvalr homogq hom
 				  );
 
   SET validate;
+  DISTRIB = "&distrib.";
   SKEWCORR = "&skew.";
   CONFLEV = LEVEL;
   %if "&stratify." = "TRUE" %then %do;
@@ -471,8 +506,10 @@ DATA RESULT(drop = r1s r0s sdiff pt_est ll ul zstat zzero pvall pvalr homogq hom
   PVAL_R = PVALR;
 RUN;
 
-PROC PRINT DATA = RESULT noobs;
-RUN;
+%if "&output." = "TRUE" %then %do;
+  PROC PRINT DATA = RESULT noobs;
+  RUN;
+%end;
 
 %if "&stratify." = "TRUE" %then %do;
 DATA WEIGHTING(keep = W_: n_strata weight);
@@ -487,8 +524,6 @@ DATA WEIGHTING(keep = W_: n_strata weight);
     ELSE IF &WEIGHT. = 5 THEN WEIGHT = 'EQUAL';      
     ELSE IF &WEIGHT. = 6 THEN WEIGHT = 'WT_USER';    
 RUN;
-PROC PRINT DATA = WEIGHTING noobs;
-RUN;
 
 DATA HOMTESTS(keep = Q_STAT DF PVAL_HOMOG);
   SET validate;
@@ -497,8 +532,12 @@ DATA HOMTESTS(keep = Q_STAT DF PVAL_HOMOG);
   PVAL_HOMOG = HOMOGP;
 RUN;
 
-PROC PRINT DATA = HOMTESTS noobs;
-RUN;
+%if "&output." = "TRUE" %then %do;
+  PROC PRINT DATA = WEIGHTING noobs;
+  RUN;
+  PROC PRINT DATA = HOMTESTS noobs;
+  RUN;
+%end;
 
 %end;
 

@@ -1,14 +1,14 @@
 **********************************************************
 *
-* Program Name   : V_SCORECI2.SAS
+* Program Name   : V_SCORECI2p.SAS
 * Level / Study  : global reusable macro
 * Type           : macro validation
-* Description    : Validation of SCORECI macro
+* Description    : Validation of SCORECI macro for Poisson RD
 *					(Work in progress)  
 * 
 * Author         : Pete Laud 
 * 
-* Date Created   : Wed Mar 17 2021
+* Date Created   : Dec 21 2023
 * Program Status : IN DEVELOPMENT
 *
 **********************************************************;
@@ -16,9 +16,7 @@
 
 *Validation of SCORECI macro, using a large random sample of parameters (alpha, n1, n0, e1, e0);
 *Output results to a text/csv file for comparison against other sources:
-*1: R 'diffscoreci' function;
-*2: SAS/STAT v9.4 PROC FREQ (NB this will not calculate any interval for 0/n1-0/n0, or n1/n1-n0/n0);
-*3: R 'scoreci' function for skewness-corrected interval;
+* R 'scoreci' function for skewness-corrected interval;
 
 
 *** The validation code below requires the SCORECI macro code to have been run;
@@ -39,7 +37,6 @@
 * (change folder location as appropriate);
 * filename prog "C:\Documents\ratesci-sas";
 * %inc prog(scoreci);
-
 
 
 %let nsamp=10000;
@@ -71,58 +68,30 @@ run;
 *run;
 *quit;
 
-
-* Run PROC FREQ comparison with different confidence levels;
-%let alpha=0.1;
 *Run the macro on the sample of data points;
-%SCORECI(DS=sample,DELTA=-0.1,LEVEL=1-&alpha.,STRATIFY=FALSE, SKEW=FALSE, OUTPUT=FALSE);
+%SCORECI(DS=sample, DELTA=-0.1, LEVEL=1-alpha, STRATIFY=FALSE, SKEW=FALSE, DISTRIB=poi, OUTPUT=FALSE);
 data sasval(keep=i e1 n1 e0 n0 conflev l_bound u_bound test_delta pval_L);
  set result;
  i=_n_;
 run;
-
-*Check against PROC FREQ MN intervals;
-ods output pdiffcls=pdiffcls;
-proc freq data=longsample ;
-  weight freq;
-  by i;
-  tables treatment*response / noprint riskdiff(cl=mn column=1) alpha=&alpha.;
-run; 
-
-data check;
- merge sasval pdiffcls (keep = i lowercl uppercl);
- by i;
- lcld = lowercl - l_bound;
- ucld = uppercl - u_bound;
-run;
-
-proc univariate data=check;
- var lcld ucld;
-run;
-
-*Run the macro again for export to R;
-%SCORECI(DS=sample,DELTA=-0.1,LEVEL=1-alpha,STRATIFY=FALSE, SKEW=FALSE, OUTPUT=FALSE);
-data sasval(keep=i e1 n1 e0 n0 conflev l_bound u_bound test_delta pval_L);
- set result;
- i=_n_;
-run;
-*Export to csv for validation against R output using program v_scoreci2.R; 
+*Export to csv for validation against R output using program v_scoreci2p.R; 
+*libname mylib "X:\My Drive\_Work\GitHub\ratesci-sas";
 proc export data=sasval 
-outfile="&path.tests\sasval2.csv"
-dbms=csv replace;
+ outfile = "&path.tests\sasval2p.csv"
+ dbms=csv replace;
 run;
 
 *Run again, this time with skewness correction;
-%SCORECI(DS=sample,DELTA=-0.1,LEVEL=1-alpha,STRATIFY=FALSE, SKEW=TRUE, OUTPUT=FALSE);
-
-*Export to csv for validation against R output using program v_scoreci2.R; 
+%SCORECI(DS=sample, DELTA=-0.1, LEVEL=1-alpha, STRATIFY=FALSE, SKEW=TRUE, DISTRIB=poi, OUTPUT=FALSE);
+*Export to csv for validation against R output using program v_scoreci.R; 
+*libname mylib "X:\My Drive\_Work\GitHub\ratesci-sas";
 data sasval(keep=e1 n1 e0 n0 conflev l_bound u_bound test_delta pval_L);
  set result;
  i=_n_;
 run;
 proc export data=sasval 
-outfile="&path.tests\sasval2skew.csv"
-dbms=csv replace;
+ outfile = "&path.tests\sasval2pskew.csv"
+ dbms=csv replace;
 run;
 
 
